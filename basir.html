@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>তাকামুল লোডিং-আনলোডিং টেস্ট (১৩০ প্রশ্ন)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Hind Siliguri', sans-serif;
+            background-color: #f8fafc;
+        }
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #e2e8f0; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #94a3b8; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #64748b; 
+        }
+        .option-label {
+            transition: all 0.2s ease-in-out;
+        }
+    </style>
+</head>
+<body class="text-slate-800 antialiased pb-20">
+
+    <!-- Sticky Header with Timer and Progress -->
+    <header class="bg-indigo-700 text-white shadow-lg sticky top-0 z-50 transition-all duration-300">
+        <div class="max-w-5xl mx-auto px-4 py-3 flex flex-wrap justify-between items-center gap-3">
+            <h1 class="text-xl sm:text-2xl font-bold truncate flex-1">তাকামুল টেস্ট</h1>
+            
+            <!-- Exam Controls / Info -->
+            <div class="flex items-center gap-4 text-sm sm:text-base font-medium">
+                <!-- Progress -->
+                <div class="bg-indigo-800 px-3 py-1.5 rounded-md border border-indigo-600 shadow-inner flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-indigo-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span id="progress-text">০ / ১৩০ উত্তর দেওয়া হয়েছে</span>
+                </div>
+                
+                <!-- Timer -->
+                <div id="timer-container" class="bg-rose-600 px-3 py-1.5 rounded-md border border-rose-500 shadow-inner flex items-center gap-2 font-mono text-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-rose-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span id="timer-display">00:00:00</span>
+                </div>
+            </div>
+            
+            <!-- Result Top Banner (Hidden by default) -->
+            <div id="score-display-top" class="hidden bg-emerald-500 text-white px-4 py-1.5 rounded-md font-bold text-lg shadow-sm border border-emerald-400 w-full sm:w-auto text-center mt-2 sm:mt-0">
+                স্কোর: 0 / 130
+            </div>
+        </div>
+        
+        <!-- Progress Bar -->
+        <div class="w-full bg-indigo-900 h-1.5">
+            <div id="progress-bar" class="bg-emerald-400 h-1.5 transition-all duration-300" style="width: 0%"></div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-5xl mx-auto px-4 py-8">
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-8 text-center">
+            <p class="text-slate-600 text-lg">সবগুলো প্রশ্নের সঠিক উত্তর নির্বাচন করুন এবং শেষে সাবমিট বাটনে ক্লিক করুন।</p>
+        </div>
+
+        <!-- Quiz Container -->
+        <form id="quiz-form">
+            <div id="questions-container" class="space-y-6">
+                <!-- Questions injected here by JS -->
+            </div>
+
+            <!-- Bottom Section -->
+            <div class="mt-12 flex flex-col items-center gap-6 border-t border-slate-200 pt-8">
+                <div id="score-display-bottom" class="hidden text-3xl font-bold text-indigo-700 bg-indigo-50 px-8 py-4 rounded-xl border-2 border-indigo-200 shadow-sm text-center w-full sm:w-auto">
+                    আপনার স্কোর: 0 / 130
+                </div>
+                
+                <button type="button" id="submit-btn" onclick="submitExam()" class="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 px-12 rounded-xl text-lg shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-1">
+                    সাবমিট করুন (Submit Exam)
+                </button>
+            </div>
+        </form>
+    </main>
+
+    <script>
+        // Compact representation of all 130 questions to save memory and DOM size.
+        // Format: Question | Option1 | Option2 | Option3 | Option4
+        // The ✅ mark designates the logic for the correct answer but is removed before displaying.
+        const rawQuizData = `1. PPE এর পূর্ণরূপ কী?|Personal Protective Equipment✅|Public Protection Engineering|Personal Program Entry|None
+2. PPE ব্যবহারের মূল উদ্দেশ্য কী?|সুন্দর দেখানো|কর্মীর নিরাপত্তা✅|কোম্পানির প্রচার|সময় বাঁচানো
+3. Safety shoes কী থেকে রক্ষা করে?|গরম থেকে|পায়ের আঘাত থেকে✅|সূর্যের আলো থেকে|ঠান্ডা বাতাস থেকে
+4. Safety helmet কোন দুর্ঘটনা থেকে রক্ষা করে?|আগুন|মাথায় আঘাত✅|কেমিক্যাল|শব্দ
+5. Ear plug কোন কাজ লাগে?|চোখের সুরক্ষা|কানকে শব্দ থেকে রক্ষা✅|পা সুরক্ষা|হাতের সুরক্ষা
+6. Safety goggles কোন অঙ্গ রক্ষা করে?|হাত|চোখ✅|মাথা|কান
+7. Reflective jacket-এর কাজ কী?|ঠান্ডা থেকে রক্ষা|অন্ধকারে দৃশ্যমান করা✅|ফ্যাশন|গরম থেকে রক্ষা
+8. Gloves কেন ব্যবহার করা হয়?|হাত গরম রাখার জন্য|হাত আঘাত থেকে রক্ষা✅|ফ্যাশনের জন্য|হাত পরিষ্কার রাখার জন্য
+9. PPE ব্যবহার না করলে কী হতে পারে?|কিছুই না|গুরুতর দুর্ঘটনা✅|বেতন কেটে নেওয়া|Supervisor খুশি
+10. সাইটে প্রবেশের আগে কী পড়তে হবে?|Jacket|PPE✅|জুতা|মোবাইল
+11. কোন PPE আগুন থেকে রক্ষা করে?|Fire resistant clothing✅|Helmet|Goggles|Jacket
+12. Face shield ব্যবহৃত হয় কোথায়?|Welding কাজ✅|রান্না|গুদাম|অফিস
+13. Hard hat কবে বদলানো উচিত?|১ বছর পরে|ক্ষতিগ্রস্ত হলে✅|Supervisor চাইলে|যখন ইচ্ছা
+14. Safety belt কোন কাজ ব্যবহৃত হয়?|গরমে ঠান্ডা থাকতে|উচ্চতায় কাজ করতে✅|গাড়ি চালাতে|ভারী লোড তুলতে
+15. PPE কে সরবরাহ করে?|কর্মী|কোম্পানি✅|দোকান|কন্ট্রাক্টর
+16. PPE-এর রঙ সাধারণত কেমন হয়?|ডার্ক|উজ্জ্বল✅|কালো|বাদামি
+17. Safety shoes-এর নিচের অংশ কেমন হয়?|মসৃণ|Anti-slip✅|নরম|চকচকে
+18. Safety jacket কোথায় বেশি দরকার?|রাতের কাজ✅|অফিস|বাসা|স্কুল
+19. PPE ছাড়া কাজ করলে দায়ী কে?|Supervisor|কর্মী✅|কোম্পানি|নিরাপত্তা রক্ষী
+20. Safety harness কী রক্ষা করে?|পড়ে যাওয়া থেকে✅|আঘাত থেকে|গরম থেকে|শব্দ থেকে
+21. PPE ব্যবহার করলে কী বাড়ে?|দুর্ঘটনা|নিরাপত্তা✅|খরচ|সময়
+22. PPE ব্যবহারের নিয়ম শেখানো হয় কোথায়?|বাজারে|সেফটি ট্রেনিং✅|অফিসে|স্কুলে
+23. PPE মাপ অনুযায়ী না হলে কী হবে?|ব্যবহারযোগ্য থাকবে|ঝুঁকি বাড়াবে✅|সুন্দর লাগবে|Supervisor খুশি
+24. Ear muff কোন ক্ষেত্রে ব্যবহৃত হয়?|বেশি শব্দ✅|বেশি আলো|বেশি বাতাস|বেশি গরম
+25. PPE ব্যবহার শেষে কোথায় রাখা উচিত?|পরিষ্কার স্থানে✅|যেকোনো জায়গায়|Supervisor-এর রুমে|ট্রাকে
+26. লোডিং শুরু করার আগে কী চেক করতে হবে?|লোডের ওজন✅|লোডের রং|Supervisor-এর মুড|সময়
+27. ভারী জিনিস তুলতে হলে কীভাবে তুলতে হবে?|কোমর বাঁকিয়ে|হাঁটু বাঁকিয়ে সোজা পিঠে✅|এক হাতে|পিঠে ঝুলিয়ে
+28. লোড রাখার সময় কী নিশ্চিত করতে হবে?|ভারসাম্য✅|আকার|রং|গন্ধ
+29. ট্রাক থেকে লোড নামানোর সময় কোথায় দাঁড়ানো ঠিক নয়?|লোডের সামনে✅|লোডের পাশে|নিরাপদ দূরত্বে|প্ল্যাটফর্মে
+30. ট্রাকে লোড দেওয়ার সময় প্রথমে কী করতে হবে?|ব্রেক লাগানো✅|গান চালানো|ছবি তোলা|মোবাইল ব্যবহার
+31. পিচ্ছিল মেঝেতে লোড নামাতে হলে কী করতে হবে?|দ্রুত কাজ করা|জায়গা পরিষ্কার করে সতর্কতা সাইন দেওয়া✅|Supervisor ডাকানো|উপেক্ষা করা
+32. গুদামে লোড রাখার সময় কোথায় রাখা উচিত?|দরজার সামনে|নির্ধারিত জায়গায়✅|যেখানেই খালি আছে|সিঁড়ির পাশে
+33. অসমান মাটিতে লোড নামানো কেন বিপজ্জনক?|লোড পড়ে যেতে পারে✅|সময় বেশি লাগে|সুন্দর লাগে না|Supervisor রাগ করবে
+34. লোড নামানোর সময় কে নির্দেশ দেয়?|Helper|Signalman✅|Supervisor|Driver
+35. ধারালো জিনিস হাতে নামানোর সময় কী ব্যবহার করতে হবে?|গ্লাভস✅|Helmet|Shoes|Goggles
+36. গুদামে লোড রাখতে হবে কেমনভাবে?|এলোমেলো|নিয়মমাফিক✅|যেভাবে ইচ্ছা|তাড়াহুড়ো করে
+37. ভারী লোড নামানোর সময় কজয়ন ব্যবহার করা উচিত?|এজকন|প্রয়োজন অনুযায়ী কয়েকজন✅|দুজইন|কেউ না
+38. Lifting করার সময় কী ব্যবহার করা উচিত?|Rope/strap✅|হাতে|শুধু shoulder|মোবাইল
+39. লোড নামানোর আগে কী করতে হয়?|Supervisor-এর অনুমতি✅|গান চালানো|হাত ধোয়া|সিগারেট খাওয়া
+40. গুদামের লোড কত উচ্চতায় রাখা উচিত?|Supervisor-এর ইচ্ছা|নিয়ম অনুযায়ী✅|যত বেশি সম্ভব|যেভাবে সুবিধা হয়
+41. Load lifting করার সময় কোথায় মুখ দেওয়া উচিত?|লোডের দিকে✅|আকাশের দিকে|Supervisor-এর দিকে|অন্যপাশে
+42. যদি লোড ভাঙা বা ক্ষতিগ্রস্ত হয়, কী করা উচিত?|লুকানো|রিপোর্ট করা✅|ফেলে দেওয়া|Supervisor কে না বলা
+43. লোড নামানোর সময় পা কোথায় রাখতে হবে?|স্থির জায়গায়✅|চলন্ত লোডের নিচে|জেভা মেঝেতে|লোডের উপরে
+44. হালকা লোড তুলতে হলে কীভাবে তুলতে হবে?|শরীরের কাছাকাছি রেখে✅|দূরে রেখে|এক হাতে|পিঠ বাঁকিয়ে
+45. ট্রাক লোড করার সময় কে নির্দেশ দেয়?|Driver|Signalman✅|Helper|Supervisor
+46. বেশি ওজন হলে কী করতে হবে?|জোর করে তোলা|অন্যদের সাহায্য নেয়া✅|Supervisor না বলা|এক হাতে চেষ্টা
+47. ট্রাকে লোড রাখলে কীভাবে রাখতে হবে?|শক্ত করে বেঁধে✅|ঢিলা করে|খোলা অবস্থায়|Supervisor এর মত
+48. পিচ্ছিল মেঝেতে হাঁটার সময় কীভাবে হাঁটতে হবে?|ধীরে ও সাবধানে✅|দ্রুত|দৌড়ে|লাফ দিয়ে
+49. Load stacking কী বোঝায়?|লোড স্তূপ করে রাখা✅|লোড ফেলে দেওয়া|Supervisor ডাকানো|লোড ভাঙা
+50. লোড নামানোর সময় কোন দিক দিয়ে আসা উচিত নয়?|লোডের নিচ দিয়ে✅|পাশে দিয়ে|সামনে দিয়ে|Supervisor-এর সাথে
+51. Forklift চালানোর আগে কী করতে হবে?|ব্রেক, টায়ার ও ফর্ক পরীক্ষা✅|গান চালানো|সিট পরিষ্কার করা|Supervisor ডাকানো
+52. Forklift চালানোর সময় প্রথমে কী করতে হবে?|সিটবেল্ট বাঁধা✅|সিগারেট খাওয়া|মোবাইল দেখা|হাত দিয়ে সিগনাল দেওয়া
+53. Forklift-এ লোড তুললে কত উচ্চতায় রাখতে হবে?|মাটির কাছাকাছি (15-20 সেমি)✅|মাথার উপরে|কোমর সমান|সর্বোচ্চ লিফট
+54. Pallet truck কী কাজ ব্যবহৃত হয়?|প্যালেট বহনে✅|বালি পরিবহনে|কেমিক্যাল ঢালায়|কাগজ বহনে
+55. Forklift কখন ব্যবহার করা যাবে না?|মসৃণ মেঝেতে|তেল বা পানি পড়ে পিচ্ছিল মেঝেতে✅|গুদামে|নির্দিষ্ট এলাকায়
+56. Loader বা Crane চালানোর সময় কে নির্দেশ দেয়?|Banksman/Signalman✅|Helper|Supervisor|Driver
+57. Overloading করলে কী হতে পারে?|মেশিন ক্ষতিগ্রস্ত✅|সময় কমে যায়|Supervisor খুশি হয়|লোড সুন্দর হয়
+58. Forklift চালানোর সময় মোবাইল ব্যবহার করা কি নিরাপদ?|হ্যাঁ|না✅|কখনো কখনো|Supervisor অনুমতি দিলে
+59. Forklift পার্ক করার সময় কী করতে হবে?|ব্রেক লাগানো✅|গান বাজানো|ফর্ক ওপরে রাখা|লাইট বন্ধ না করা
+60. Crane-এর লোড লিফট করার আগে কী করতে হবে?|সিগনালম্যান নির্দেশ দিতে হবে✅|Supervisor আসতে হবে|Helper ধরে রাখতে হবে|সবাই ছবি তুলবে
+61. Machine চালানোর আগে কী দেখতে হবে?|Pre-use inspection✅|Supervisor অনুমতি|হেলমেট|লোডের রং
+62. Pallet truck ব্যবহার করার সময় কী সাবধানতা নিতে হবে?|অতিরিক্ত লোড না দেওয়া✅|Supervisor-এর অনুমতি|ড্রাকের সাতাহ শেখা|মোবাইল ব্যবহার
+63. Crane দিয়ে লোড তুললে কোথায় দাঁড়ানো ঠিক নয়?|লোডের নিচে✅|পাশে|দূরে|সিগনালম্যানের পাশে
+64. Forklift ব্যবহার করার সময় কী সবসময় করতে হবে?|হর্ন বাজানো✅|গান বাজানো|মোবাইল দেখা|Supervisor ডাকানো
+65. Overhead crane-এর হুক কোথায় রাখা উচিত নয়?|মাটির কাছাকাছি|লোকজনের উপরে✅|লোডের পাশে|নির্ধারিত জায়গায়
+66. Forklift-এ লোড বহনের সময় কীভাবে চালাতে হবে?|ধীরে ও সাবধানে✅|দ্রুত|বাঁক দিয়ে দ্রুত|Supervisor-এর দিকে তাকিয়ে
+67. Forklift-এর হর্ন কখন বাজাতে হবে?|মোড় ঘোরার সময়✅|Supervisor ডাকলে|গান বাজাতে|লোড তোলার সময়
+68. Crane-এর lifting capacity কোথায় লেখা থাকে?|মেশিনের গায়ে✅|Supervisor-এর অফিসে|ম্যানুয়াল বইতে|Helper-এর কাছে
+69. Pallet truck দিয়ে কী বহন করা যায় না?|কাঠের প্যালেট|স্টিল প্যালেট|Loose materials✅|কার্টন
+70. Forklift-এর ফর্ক মাটির কত উপরে রাখতে হবে চালানোর সময়?|১৫-২০ সেমি✅|৫০ সেমি|১ মিটার|২ মিটার
+71. Forklift-এ যাত্রী বহন করা কি অনুমোদিত?|হ্যাঁ|না✅|Supervisor অনুমতি দিলে|কখনো কখনো
+72. Crane চালানোর সময় বাতাস বেশি হলে কী করতে হবে?|কাজ বন্ধ করতে হবে✅|Supervisor ডাকতে হবে|Rope শক্ত করে বাঁধতে হবে|তাড়াতাড়ি শেষ করতে হবে
+73. Forklift চালানোর সময় বাঁক নিলে কী করতে হবে?|ধীরে নিতে হবে✅|দ্রুত|হর্ন বাজানো যাবে না|Supervisor দেখতে হবে
+74. Machine চালানোর পর কাজ শেষে কী করতে হবে?|পার্ক, ব্রেক ও বন্ধ করা✅|গান বাজানো|Supervisor ডাকানো|খোলা রাখা
+75. Forklift চালককে কী থাকতে হবে?|বৈধ লাইসেন্স✅|Supervisor-এর অনুমতি|মোবাইল|Helper
+76. লাল রঙের সেফটি সাইন কী বোঝায়?|Prohibition/নিষেধ✅|Warning|Safe condition|Mandatory
+77. সবুজ রঙের সাইন কী বোঝায়?|Exit/First aid✅|Danger|Fire|Stop
+78. হলুদ রঙের সাইন সাধারণত কী বোঝায়?|Warning✅|Prohibition|Safe condition|Fire
+79. নীল রঙের সাইন কী বোঝায়?|Mandatory✅|Prohibition|Warming|Safe
+80. অগ্নিকাণ্ড হলে প্রথম কাজ কী?|Fire alarm বাজানো✅|Supervisor ডাকানো|পালানো|পানি খোঁজা
+81. জরুরি বহির্গমন সাইন সাধারণত কোন রঙের হয়?|সবুজ✅|লাল|হলুদ|নীল
+82. Fire extinguisher কোথায় রাখা হয়?|সহজ পাওয়া যায় এমন স্থানে✅|Supervisor-এর রুমে|গুদামের ভিতরে|অফিসের ড্রয়ারে
+83. কোন ফায়ার এক্সটিংগুইশার বিদ্যুৎ আগুনে ব্যবহার হয়?|CO₂✅|পানি|ফোম|বালি
+84. জরুরি পরিস্থিতিতে কার সাথে যোগাযোগ করতে হবে?|Supervisor✅|Helper|বন্ধু|Family
+85. First aid box কোথায় থাকে?|নিরাপদ স্থানে✅|Supervisor-এর অফিসে|ক্যাফেটেরিয়া|বাসে
+86. জরুরি মহড়া (drill) কেন করা হয়?|অভ্যাস তৈরি করতে✅|Supervisor খুশি করতে|সময় কাটাতে|খেলাধুলা
+87. ফায়ার এক্সটিংগুইশার কতদিন পর পর চেক করা উচিত?|নিয়মিত✅|কখনো না|বছরে একবার|Supervisor চাইলে
+88. যদি কেউ আহত হয়, কী করতে হবে?|First aid দেওয়া✅|Supervisor লুকানো|উপেক্ষা করা|কাজ চালিয়ে যাওয়া
+89. গুদামে ধূমপান নিষিদ্ধ কেন?|আগুন লাগতে পারে✅|Supervisor রাগ করে|সময় নষ্ট হয়|গন্ধ খারাপ
+90. Emergency exit door কেমন রাখা উচিত?|সবসময় খোলা✅|বন্ধ|তালা দেওয়া|Supervisor-এর কাছে
+91. অগ্নি নির্বাপণ যন্ত্রের রঙ কী?|লাল✅|সবুজ|হলুদ|কালো
+92. Fire alarm কী বোঝায়?|আগুন লেগেছে✅|Supervisor ডাকছে|কাজ শেষ|Break time
+93. জরুরি অবস্থায় লিফট ব্যবহার করা উচিত কি?|না✅|হ্যাঁ|Supervisor অনুমতি দিলে|কখনো কখনো
+94. বিদ্যুৎ শকে আক্রান্ত হলে প্রথমে কী করতে হবে?|বিদ্যুৎ সংযোগ বন্ধ✅|পানি দেওয়া|Supervisor ডাকানো|CPR শুরু
+95. Emergency assembly point কী?|সবাই জড়ো হওয়ার নিরাপদ জায়গা✅|Supervisor-এর রুম|গুদাম|অফিস
+96. Warning sign-এর আকৃতি কেমন?|ত্রিভুজ✅|বর্গ|বৃত্ত|আয়তক্ষেত্র
+97. Prohibition sign-এর রঙ কেমন?|লাল বৃত্তের মধ্যে কালো ছবি✅|সবুজ|নীল|হলুদ
+98. Mandatory sign-এর রঙ কী?|নীল✅|সবুজ|লাল|কালো
+99. যদি গুদামে গ্যাস লিক হয়, কী করতে হবে?|এলাকা খালি করতে হবে✅|Supervisor ডাকানো|লুকানো|গান বাজানো
+100. Emergency number কোথায় লেখা থাকে?|Notice board✅|Supervisor-এর পকেটে|গুদামের ভিতরে|গাড়ির গায়ে
+101. Load Center Distance বলতে কী বোঝায়?|লোডের কেন্দ্র থেকে ফর্কের সামনে পর্যন্ত দূরত্ব✅|লোডের উচ্চতা|ফর্কের দৈর্ঘ্য|Supervisor-এর দূরত্ব
+102. Forklift-এর Load capacity কোথায় লেখা থাকে?|Load chart/Name plate✅|Supervisor-এর অফিসে|ম্যানুয়াল বইতে|ট্রাকে
+103. Overloading করলে কী হয়?|Forklift উল্টে যেতে পারে✅|Supervisor খুশি হবে|সময় বাঁচে|লোড হালকা হয়
+104. Forklift Stability Triangle কী বোঝায়?|তিনটি পয়েন্টে ভারসাম্য রাখা✅|লোডের ওজন|Supervisor-এর অনুমতি|তিন রঙের সাইন
+105. ঢাল বেয়ে উঠলে লোড কোন দিকে রাখা উচিত?|Uphill দিক✅|Downhill|পাশে|Supervisor-এর দিকে
+106. ঢাল বেয়ে নামলে Forklift কীভাবে চালাতে হয়?|লোড Uphill রেখে✅|দ্রুত নামতে|লোড নিচে রেখে|Supervisor ডাকাতে
+107. Load stacking করার সময় উচ্চতা বেশি হলে কী সমস্যা হতে পারে?|লোড পড়ে যেতে পারে✅|সময় কম লাগে|Supervisor খুশি হয়|লোড হালকা হয়
+108. Pallet damage হলে কী করা উচিত?|ব্যবহার করা যাবে না✅|লুকানো|Supervisor- না বলা|ফেলে রাখা
+109. Forklift-এ অসমান লোড তোলা কেন বিপজ্জনক?|ভারসাম্য নষ্ট হয়✅|সুন্দর লাগে না|সময় বেশি লাগে|Supervisor রাগ করে
+110. Load secure করতে কী ব্যবহার করা হয়?|Strap, chain, rope✅|কাগজ|Supervisor-এর হাত|গ্লাভস
+111. Forklift-এর Counterweight কোথায় থাকে?|পিছনে✅|সামনে|উপরে|নিচে
+112. Forklift reverse চালানোর সময় কী করতে হবে?|চারপাশ দেখে হর্ন বাজাতে হবে✅|দ্রুত চালাতে হবে|Supervisor ডাকাতে হবে|চোখ বন্ধ করতে হবে
+113. Forklift-এর ফর্ক কখন ওপরে রাখতে হয়?|শুধু লোড তুলতে✅|চালানোর সময়|পার্ক করার সময়|Supervisor এলে
+114. Forklift কোন গতিতে চালাতে হবে?|ধীরে✅|দ্রুত|Supervisor-এর মতো|মোবাইল দেখে
+115. Crane hook ব্যবহার করার আগে কী করতে হয়?|Hook inspection✅|Supervisor ডাকানো|Helper ডাকানো|Rope টানানো
+116. Crane-এর lifting sling damage হলে কী করতে হবে?|সাথে সাথে ব্যবহার বন্ধ✅|Supervisor লুকানো|Rope জোড়া লাগানো|কাজ চালানো
+117. Pallet truck-এ লোড নেয়ার সময় কী করতে হবে?|সঠিক ভারসাম্য রাখা✅|Supervisor ডাকানো|গান বাজানো|দ্রুত চালানো
+118. Forklift-এর horn কেন ব্যবহার করা হয়?|অন্যদের সতর্ক করতে✅|গান বাজাতে|Supervisor ডাকাতে|লোড চেক করতে
+119. Crane operator-এর কী থাকতে হবে?|Valid license & Training✅|Supervisor অনুমতি|Helper|PPE না থাকলেও হবে
+120. Forklift-এর টায়ার damage হলে কী করতে হবে?|ব্যবহার বন্ধ করতে হবে✅|Supervisor লুকানো|Rope দিয়ে বাঁধা|কাজ চালানো
+121. Fire hose reel sign কোন রঙের হয়?|লাল✅|সবুজ|নীল|হলুদ
+122. Safety helmet-এর রঙ অনুযায়ী কোড শ্রমিকরা কোন রঙ ব্যবহার করে?|হলুদ✅|সাদা|নীল|সবুজ
+123. Supervisor-এর জন্য কোন রঙের helmet ব্যবহৃত হয়?|সাদা✅|হলুদ|সবুজ|নীল
+124. Electrician সাধারণত কোন রঙের helmet ব্যবহার করে?|নীল✅|সাদা|হলুদ|সবুজ
+125. Fire drill করার উদ্দেশ্য কী?|জরুরি প্রস্তুতি✅|Supervisor খুশি করা|সময় নষ্ট করা|খেলা
+126. Accident ঘটলে প্রথমে কী করতে হবে?|এলাকা নিরাপদ করা✅|Supervisor ডাকানো|মোবাইলে ছবি তোলা|লুকানো
+127. CPR-এর পূর্ণরূপ কী?|Cardiopulmonary Resuscitation✅|Control Personal Risk|Central Power Regulation|Critical Point Recovery
+128. Emergency exit sign সাধারণত কোন রঙে থাকে?|সবুজ✅|লাল|নীল|হলুদ
+129. Chemical spill হলে প্রথমে কী করতে হবে?|এলাকা খালি করা✅|Supervisor ডাকানো|পানি ঢালা|মুছে ফেলা
+130. Fire extinguisher ব্যবহারের নিয়ম কী?|PASS (Pull, Aim, Squeeze, Sweep)✅|FAST|PUSH|STOP`;
+
+        let quizData = [];
+        let submitted = false;
+        
+        // Timer Variables
+        let timerInterval;
+        let elapsedSeconds = 0;
+
+        // Parse the raw string into a usable JS array of objects
+        function parseQuizData() {
+            const lines = rawQuizData.split('\n').filter(line => line.trim() !== '');
+            lines.forEach(line => {
+                const parts = line.split('|');
+                const questionText = parts[0];
+                const options = [];
+                
+                for(let i = 1; i < parts.length; i++) {
+                    let optText = parts[i].trim();
+                    let isCorrect = false;
+                    
+                    // Logic to extract ✅ but not show it to the user
+                    if(optText.includes('✅')) {
+                        isCorrect = true;
+                        optText = optText.replace('✅', '').trim();
+                    }
+                    
+                    options.push({ text: optText, isCorrect: isCorrect });
+                }
+                
+                quizData.push({ q: questionText, options: options });
+            });
+        }
+
+        // Render HTML for all questions
+        function renderQuestions() {
+            const container = document.getElementById('questions-container');
+            
+            quizData.forEach((question, qIndex) => {
+                const card = document.createElement('div');
+                card.className = "bg-white rounded-xl shadow-sm border border-slate-200 p-5 md:p-8 hover:shadow-md transition-shadow";
+                card.id = `card-${qIndex}`;
+                
+                const qTitle = document.createElement('h3');
+                qTitle.className = "text-lg md:text-xl font-bold text-slate-800 mb-4";
+                qTitle.innerText = question.q;
+                card.appendChild(qTitle);
+                
+                const optionsGrid = document.createElement('div');
+                optionsGrid.className = "grid grid-cols-1 md:grid-cols-2 gap-3";
+                
+                question.options.forEach((opt, oIndex) => {
+                    const label = document.createElement('label');
+                    label.className = "option-label flex items-center p-3 md:p-4 border rounded-lg cursor-pointer hover:bg-indigo-50 border-slate-200 select-none group";
+                    label.id = `label-${qIndex}-${oIndex}`;
+                    
+                    const input = document.createElement('input');
+                    input.type = "radio";
+                    input.name = `question_${qIndex}`;
+                    input.value = oIndex;
+                    input.className = "w-5 h-5 text-indigo-600 bg-slate-100 border-slate-300 focus:ring-indigo-500 mr-3 cursor-pointer";
+                    
+                    input.addEventListener('change', () => handleSelection(qIndex));
+                    
+                    const span = document.createElement('span');
+                    span.className = "text-slate-700 font-medium group-hover:text-indigo-800 transition-colors";
+                    span.innerText = opt.text;
+                    
+                    label.appendChild(input);
+                    label.appendChild(span);
+                    optionsGrid.appendChild(label);
+                });
+                
+                card.appendChild(optionsGrid);
+                container.appendChild(card);
+            });
+        }
+
+        // Handle visual feedback during selection and update progress
+        function handleSelection(qIndex) {
+            if (submitted) return;
+            
+            // Remove highlight from all options in this question
+            const labels = document.querySelectorAll(`[id^="label-${qIndex}-"]`);
+            labels.forEach(l => {
+                l.classList.remove('bg-indigo-100', 'border-indigo-400');
+            });
+            
+            // Highlight newly selected option
+            const checkedInput = document.querySelector(`input[name="question_${qIndex}"]:checked`);
+            if (checkedInput) {
+                const selectedLabel = document.getElementById(`label-${qIndex}-${checkedInput.value}`);
+                selectedLabel.classList.add('bg-indigo-100', 'border-indigo-400');
+            }
+            
+            updateProgress();
+        }
+
+        // Update progress bar and text
+        function updateProgress() {
+            const total = quizData.length;
+            // Count unique questions answered
+            const answered = document.querySelectorAll('input[type="radio"]:checked').length;
+            
+            const progressPercent = (answered / total) * 100;
+            
+            document.getElementById('progress-text').innerText = `${bengaliNum(answered)} / ${bengaliNum(total)} উত্তর দেওয়া হয়েছে`;
+            document.getElementById('progress-bar').style.width = `${progressPercent}%`;
+        }
+        
+        // Helper to convert English digits to Bengali for aesthetic
+        function bengaliNum(num) {
+            const finalEnEnglishToBanglaNumber = {'0':'০','1':'১','2':'২','3':'৩','4':'৪','5':'৫','6':'৬','7':'৭','8':'৮','9':'৯'};
+            return String(num).replace(/[0-9]/g, function(x) {
+                return finalEnEnglishToBanglaNumber[x];
+            });
+        }
+
+        // Timer Logic
+        function startTimer() {
+            timerInterval = setInterval(() => {
+                elapsedSeconds++;
+                updateTimerDisplay();
+            }, 1000);
+        }
+        
+        function updateTimerDisplay() {
+            const hrs = Math.floor(elapsedSeconds / 3600);
+            const mins = Math.floor((elapsedSeconds % 3600) / 60);
+            const secs = elapsedSeconds % 60;
+            
+            const formatted = 
+                String(hrs).padStart(2, '0') + ':' + 
+                String(mins).padStart(2, '0') + ':' + 
+                String(secs).padStart(2, '0');
+                
+            document.getElementById('timer-display').innerText = formatted;
+        }
+
+        // Submit and evaluate exam
+        function submitExam() {
+            if(submitted) return; 
+            
+            // Confirm if not all answered
+            const answered = document.querySelectorAll('input[type="radio"]:checked').length;
+            const total = quizData.length;
+            
+            if (answered < total) {
+                const conf = confirm(`আপনি ১৩০টির মধ্যে ${answered} টি প্রশ্নের উত্তর দিয়েছেন। আপনি কি নিশ্চিত যে সাবমিট করতে চান?`);
+                if (!conf) return;
+            }
+            
+            // Stop timer
+            clearInterval(timerInterval);
+            document.getElementById('timer-container').classList.replace('bg-rose-600', 'bg-slate-700');
+            document.getElementById('timer-container').classList.replace('border-rose-500', 'border-slate-600');
+            
+            let score = 0;
+            
+            quizData.forEach((question, qIndex) => {
+                const selectedInput = document.querySelector(`input[name="question_${qIndex}"]:checked`);
+                const card = document.getElementById(`card-${qIndex}`);
+                let answeredCorrectly = false;
+                
+                question.options.forEach((opt, oIndex) => {
+                    const label = document.getElementById(`label-${qIndex}-${oIndex}`);
+                    const input = document.querySelector(`input[name="question_${qIndex}"][value="${oIndex}"]`);
+                    
+                    // Freeze inputs
+                    input.disabled = true;
+                    label.classList.remove('cursor-pointer', 'hover:bg-indigo-50', 'bg-indigo-100', 'border-indigo-400');
+                    label.classList.add('cursor-default');
+                    
+                    if (opt.isCorrect) {
+                        // Mark correct answer Green
+                        label.classList.add('bg-emerald-100', 'border-emerald-500', 'text-emerald-900');
+                        label.querySelector('span').innerHTML += ' <span class="text-emerald-600 font-extrabold ml-1">✓</span>';
+                        
+                        if (selectedInput && selectedInput.value == oIndex) {
+                            answeredCorrectly = true;
+                        }
+                    } else if (selectedInput && selectedInput.value == oIndex) {
+                        // Mark wrong selection Red
+                        label.classList.add('bg-rose-100', 'border-rose-500', 'text-rose-900');
+                        label.querySelector('span').innerHTML += ' <span class="text-rose-600 font-extrabold ml-1">✗</span>';
+                    } else {
+                        // Fade out unselected incorrect options
+                        label.classList.add('opacity-50', 'bg-slate-50');
+                    }
+                });
+                
+                // Color entire card slightly based on correctness
+                if (answeredCorrectly) {
+                    score++;
+                    card.classList.add('border-emerald-300', 'bg-emerald-50/20');
+                } else if (selectedInput) {
+                    card.classList.add('border-rose-300', 'bg-rose-50/20');
+                } else {
+                    card.classList.add('border-amber-300', 'bg-amber-50/20'); // Unanswered
+                }
+            });
+            
+            // Show scores
+            const scoreText = `আপনার স্কোর: ${score} / ${total}`;
+            
+            const topDisplay = document.getElementById('score-display-top');
+            topDisplay.innerText = scoreText;
+            topDisplay.classList.remove('hidden');
+            
+            const bottomDisplay = document.getElementById('score-display-bottom');
+            bottomDisplay.innerText = scoreText;
+            bottomDisplay.classList.remove('hidden');
+            
+            // Update Submit Button State
+            const btn = document.getElementById('submit-btn');
+            btn.innerText = "পরীক্ষা সম্পন্ন হয়েছে";
+            btn.disabled = true;
+            btn.classList.remove('hover:bg-indigo-700', 'hover:-translate-y-1', 'shadow-lg', 'bg-indigo-600');
+            btn.classList.add('bg-slate-500', 'cursor-not-allowed', 'opacity-80');
+            
+            submitted = true;
+            
+            // Scroll smoothly to top
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Initialize Application
+        window.onload = () => {
+            parseQuizData();
+            renderQuestions();
+            updateProgress();
+            startTimer();
+        };
+    </script>
+</body>
+</html>
